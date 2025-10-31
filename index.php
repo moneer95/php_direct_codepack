@@ -16,10 +16,10 @@
 include('gateway.php');
 include("phone_country_codes.php");
 $CSGW = new P3\SDK\Gateway;
-$key = '9GXwHNVC87VqsqNM';
+$key = '5CZ4T3pdVLUN011UrKFD';
 
 $tran = array (
-    'merchantID' => '119837',
+    'merchantID' => '278346',
   "merchantSecret" => $key,
       'action' => 'SALE',
       'type' => 1,

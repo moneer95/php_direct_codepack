@@ -24,7 +24,7 @@ class Gateway {
 	/**
 	 * @var string	Merchant Account Id or Alias
 	 */
-	static public $merchantID = '119837';
+	static public $merchantID = '278346';
 
 	/**
 	 * @var string	Password for above Merchant Account
@@ -34,7 +34,7 @@ class Gateway {
 	/**
 	 * @var string	Secret for above Merchant Account
 	 */
-	static public $merchantSecret = '9GXwHNVC87VqsqNM';
+	static public $merchantSecret = '5CZ4T3pdVLUN011UrKFD';
 
 	/**
 	 * @var string	Proxy URL if required (eg. 'https://www.proxy.com:3128')

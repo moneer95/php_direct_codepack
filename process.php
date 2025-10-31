@@ -2,7 +2,7 @@
 include('gateway.php');
 include("phone_country_codes.php");
 $CSGW = new P3\SDK\Gateway;
-$key = '9GXwHNVC87VqsqNM'; // Should be $merchantSecret from the file gateway.php -> change if needed
+$key = '5CZ4T3pdVLUN011UrKFD'; // Should be $merchantSecret from the file gateway.php -> change if needed
 $samplecodeURL = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 
 // Gateway URL
@@ -12,7 +12,7 @@ $gatewayURL = 'https://gateway.cardstream.com/direct/';
 if (!isset($_GET['threeDSAcsResponse'])) {
 
 $req = array(
-    'merchantID' => '119837', // Should be $merchantID from the file gateway.php -> change if needed
+    'merchantID' => '278346', // Should be $merchantID from the file gateway.php -> change if needed
     'action' => 'SALE',
     'type' => 1,
     'countryCode' => 826,
