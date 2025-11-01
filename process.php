@@ -81,7 +81,8 @@ if (!isset($_GET['threeDSAcsResponse'])) {
     $customerEmail = sanitizeInput($_POST['customerEmail']);
     $customerAddress = sanitizeInput($_POST['customerAddress']);
     $customerPostCode = sanitizeInput($_POST['customerPostCode']);
-    
+    $customerPhone = sanitizeInput($_POST['customerPhone'] ?? '');
+
     // Clean card number (remove spaces)
     $cardNumber = str_replace(' ', '', $cardNumber);
     
@@ -107,7 +108,7 @@ if (!isset($_GET['threeDSAcsResponse'])) {
         'orderRef' => 'Order-' . uniqid(),
         'transactionUnique' => (isset($_REQUEST['transactionUnique']) ? $_REQUEST['transactionUnique'] : uniqid()),
         // Use configured phone number from config or leave empty if not provided
-        "customerPhone" => !empty($config['defaultPhoneNumber']) ? format_phone_number($config['defaultPhoneNumber'], $config['defaultPhoneCountry']) : '',
+        'customerPhone' => $customerPhone,
         'remoteAddress' => $_SERVER['REMOTE_ADDR'],
         'threeDSRedirectURL' => $samplecodeURL . '?threeDSAcsResponse',
         'deviceChannel' => 'browser',
@@ -134,6 +135,7 @@ if (!isset($_GET['threeDSAcsResponse'])) {
     $_SESSION['customerEmail']      = $customerEmail;
     $_SESSION['customerAddress']    = $customerAddress;
     $_SESSION['customerPostCode']   = $customerPostCode;
+    $_SESSION['customerPhone'] = $customerPhone;
 
     
     // Sign the request
@@ -238,6 +240,7 @@ if (isset($res['responseCode'])) {
       $customerAddress = $_SESSION['customerAddress'] ?? null;
       $customerPostCode= $_SESSION['customerPostCode']?? null;
 
+
       // (Optional) one-time log to see exactly what the gateway returned
       // error_log('Gateway success keys: ' . implode(',', array_keys($res)));
 
@@ -254,6 +257,7 @@ if (isset($res['responseCode'])) {
           'customerEmail'    => $customerEmail,
           'customerAddress'  => $customerAddress,
           'customerPostCode' => $customerPostCode,
+          'customerPhone'    => $_SESSION['customerPhone'] ?? null,
 
           // Helpful for debugging on the receiver:
           'gatewayResponse'  => $res,

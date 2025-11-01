@@ -283,6 +283,11 @@ unset($_SESSION['payment_errors']);
                 </div>
 
                 <div class="field">
+                  <label class="label" for="customerPhone">Phone</label>
+                  <input class="input" id="customerPhone" type="tel" name="customerPhone" placeholder="+44 7123 456789" required />
+                </div>
+
+                <div class="field">
                   <label class="label" for="customerAddress">Street Address</label>
                   <input class="input" id="customerAddress" type="text" name="customerAddress" placeholder="123 Main Street" required />
                 </div>
