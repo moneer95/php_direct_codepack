@@ -311,7 +311,7 @@ if (isset($res['responseCode'])) {
         ]);
 
         // ✅ After webhook, redirect to success page
-        $redirectUrl = "/payment-success.php?orderRef=" . urlencode($orderRef);
+        $redirectUrl = "https://ea-dental.com/success?orderRef=" . urlencode($orderRef);
         header("Location: $redirectUrl");
         exit;
 
