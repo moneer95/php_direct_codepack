@@ -126,6 +126,15 @@ if (!isset($_GET['threeDSAcsResponse'])) {
     $_SESSION['transactionUnique'] = $req['transactionUnique'];
     $_SESSION['amountMinor']       = $_POST['Amount'];
 
+    $_SESSION['orderRef']           = $req['orderRef'];
+    $_SESSION['transactionUnique']  = $req['transactionUnique'];
+    $_SESSION['amountMinor']        = $req['amount']; // minor units
+
+    $_SESSION['customerName']       = $customerName;
+    $_SESSION['customerEmail']      = $customerEmail;
+    $_SESSION['customerAddress']    = $customerAddress;
+    $_SESSION['customerPostCode']   = $customerPostCode;
+
     
     // Sign the request
     $req['signature'] = createSignature($req, $key);
@@ -207,70 +216,68 @@ if (isset($res['responseCode'])) {
 
     } elseif ($res['responseCode'] == 0) {
         
-        // Get cartItems from session
-        $cartItems = $_SESSION['cartItems'] ?? [];
-        $customerName = $_SESSION['customerName'] ?? [];
-        $customerAddress = $_SESSION['customerAddress'] ?? [];
-        $customerEmail = $_SESSION['customerEmail'] ?? [];
-        $customerPostCode = $_SESSION['customerPostCode'] ?? [];
-        $orderRef = $_SESSION['orderRef'] ?? [];
-        $transactionUnique = $_SESSION['transactionUnique'] ?? [];
-        $amountMinor = $_SESSION['amountMinor'] ?? [];
-            
-        // Successful payment
-        $html .= '<div class="success"><h2>✓ Payment Successful</h2>';
-        $html .= "<p>" . htmlentities($res['responseMessage']) . "</p></div>";
-        
-        // Display cart items if available
-        if (!empty($cartItems)) {
-            $html .= '<div style="margin-top:20px;padding:15px;background:#f9f9f9;border-radius:8px;">';
-            $html .= '<h3>Order Details:</h3><ul>';
-            foreach ($cartItems as $item) {
-                $itemName = htmlspecialchars($item['name'] ?? 'Item');
-                $itemPrice = floatval($item['price'] ?? 0);
-                $itemQty = intval($item['quantity'] ?? 1);
-                $itemTotal = $itemPrice * $itemQty;
-                $html .= "<li><strong>$itemName</strong> × $itemQty = £" . number_format($itemTotal, 2) . "</li>";
-            }
-            $html .= '</ul></div>';
-        }
+      // Prefer values returned by the gateway ($res). Fall back to what we saved pre-3DS in session.
+      $transactionRef = $res['transactionUnique']
+          ?? $res['crossReference']
+          ?? $res['transactionID']
+          ?? ($_SESSION['transactionUnique'] ?? null);
 
-      // --- Webhook trigger ---
-      $webhookUrl = "https://ea-dental.com/api/payment-succeed"; // your webhook endpoint
-      $payload = json_encode([
-          'status'          => 'success',
-          'transactionRef'  => $_POST['transactionUnique'] ?? null,
-          'orderRef'        => $_POST['orderRef'] ?? null,
-          'amount'          => $_POST['amount'] ?? null,
-          'responseMessage' => $_POST['responseMessage'] ?? null,
-          'cardType'        => $_POST['cardType'] ?? null,
-          'timestamp'       => date('c'),
-          'cartItems'       => $cartItems,
-          'customerName'    => $customerName,
-          'customerAddress' => $customerAddress,
-          'customerEmail'   => $customerEmail,
-          'customerPostCode'=> $customerPostCode,
-      ]);
+      $orderRef = $res['orderRef']
+          ?? ($_SESSION['orderRef'] ?? null);
 
+      $amountMinor = $res['amount']
+          ?? ($_SESSION['amountMinor'] ?? null);
+
+      $responseMsg = $res['responseMessage'] ?? null;
+      $cardType    = $res['cardType'] ?? $res['cardTypeCode'] ?? null;
+
+      // Customer + cart from session
+      $cartItems       = $_SESSION['cartItems']       ?? [];
+      $customerName    = $_SESSION['customerName']    ?? null;
+      $customerEmail   = $_SESSION['customerEmail']   ?? null;
+      $customerAddress = $_SESSION['customerAddress'] ?? null;
+      $customerPostCode= $_SESSION['customerPostCode']?? null;
+
+      // (Optional) one-time log to see exactly what the gateway returned
+      // error_log('Gateway success keys: ' . implode(',', array_keys($res)));
+
+      $payloadArr = [
+          'status'           => 'success',
+          'transactionRef'   => $transactionRef,
+          'orderRef'         => $orderRef,
+          'amount'           => $amountMinor,
+          'responseMessage'  => $responseMsg,
+          'cardType'         => $cardType,
+          'timestamp'        => date('c'),
+          'cartItems'        => $cartItems,
+          'customerName'     => $customerName,
+          'customerEmail'    => $customerEmail,
+          'customerAddress'  => $customerAddress,
+          'customerPostCode' => $customerPostCode,
+
+          // Helpful for debugging on the receiver:
+          'gatewayResponse'  => $res,
+      ];
+
+      $payload = json_encode($payloadArr, JSON_UNESCAPED_SLASHES);
+
+      $webhookUrl = "https://ea-dental.com/api/payment-succeed";
       $ch = curl_init($webhookUrl);
-      curl_setopt($ch, CURLOPT_POST, true);
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-      curl_setopt($ch, CURLOPT_HTTPHEADER, [
-          'Content-Type: application/json',
-          'Content-Length: ' . strlen($payload)
+      curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
       ]);
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
       $response = curl_exec($ch);
+      $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
       $error    = curl_error($ch);
       curl_close($ch);
 
-      if ($error) {
-          error_log("Webhook failed: " . $error);
-      } else {
-          error_log("Webhook sent: " . $response);
-      }
+      error_log("Webhook HTTP {$httpCode}; body: {$response}");
+      if ($error) error_log("Webhook cURL error: {$error}");
+
 
 
     
