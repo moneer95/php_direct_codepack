@@ -1,0 +1,35 @@
+# Configuration files with secrets
+config.php
+
+# Log files
+*.log
+logs/
+error_log
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Vendor dependencies (if using Composer)
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Build artifacts
+build/
+dist/
+

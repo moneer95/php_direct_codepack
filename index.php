@@ -1,7 +1,57 @@
 <?php
-// Calculate amount if provided, otherwise use default
-$amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 12.34;
+// Load security helpers
+require_once __DIR__ . '/security.php';
+
+// Start secure session
+startSecureSession();
+
+// Generate CSRF token
+$csrfToken = generateCSRFToken();
+
+// Get cartItems from request (POST or GET) - supports both JSON and array formats
+$cartItems = [];
+if (isset($_POST['cartItems']) && is_array($_POST['cartItems'])) {
+    $cartItems = $_POST['cartItems'];
+} elseif (isset($_GET['cartItems']) && is_array($_GET['cartItems'])) {
+    $cartItems = $_GET['cartItems'];
+} elseif (isset($_POST['items'])) {
+    // Support JSON string format (e.g., from Next.js)
+    $decodedItems = json_decode($_POST['items'], true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedItems)) {
+        $cartItems = $decodedItems;
+    }
+} elseif (isset($_GET['items'])) {
+    // Support JSON string in GET request
+    $decodedItems = json_decode($_GET['items'], true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedItems)) {
+        $cartItems = $decodedItems;
+    }
+} elseif (isset($_SESSION['cartItems']) && is_array($_SESSION['cartItems'])) {
+    $cartItems = $_SESSION['cartItems'];
+}
+
+// Calculate amount from cartItems or from parameter
+$amount = 0;
+if (!empty($cartItems)) {
+    foreach ($cartItems as $item) {
+        if (isset($item['price']) && isset($item['quantity'])) {
+            $amount += floatval($item['price']) * intval($item['quantity']);
+        }
+    }
+}
+if ($amount == 0) {
+    $amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 12.34;
+}
 $amount_minor = str_pad((int)($amount * 100), 4, '0', STR_PAD_LEFT); // Convert to minor currency (pence)
+
+// Store cartItems in session for processing
+if (!empty($cartItems)) {
+    $_SESSION['cartItems'] = $cartItems;
+}
+
+// Display any errors from payment processing
+$errors = $_SESSION['payment_errors'] ?? [];
+unset($_SESSION['payment_errors']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -147,14 +197,28 @@ $amount_minor = str_pad((int)($amount * 100), 4, '0', STR_PAD_LEFT); // Convert 
         <aside class="card">
           <div class="card-head">Order Summary</div>
           <div class="card-body">
-            <div class="summary-row">
-              <div>£<?php echo number_format($amount, 2); ?></div>
-            </div>
-
-            <div class="summary-row">
-              <div class="summary-muted">Subtotal</div>
-              <div>£<?php echo number_format($amount, 2); ?></div>
-            </div>
+            <?php if (!empty($cartItems)): ?>
+              <?php foreach ($cartItems as $item): ?>
+                <?php
+                  $itemName = htmlspecialchars($item['name'] ?? 'Item');
+                  $itemPrice = floatval($item['price'] ?? 0);
+                  $itemQty = intval($item['quantity'] ?? 1);
+                  $itemTotal = $itemPrice * $itemQty;
+                ?>
+                <div class="summary-row">
+                  <div>
+                    <strong><?php echo $itemName; ?></strong>
+                    <div class="summary-muted">× <?php echo $itemQty; ?></div>
+                  </div>
+                  <div>£<?php echo number_format($itemTotal, 2); ?></div>
+                </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <div class="summary-row">
+                <div class="summary-muted">Item</div>
+                <div>£<?php echo number_format($amount, 2); ?></div>
+              </div>
+            <?php endif; ?>
 
             <div class="summary-total">
               <span>Total</span><span>£<?php echo number_format($amount, 2); ?> GBP</span>
@@ -168,7 +232,19 @@ $amount_minor = str_pad((int)($amount * 100), 4, '0', STR_PAD_LEFT); // Convert 
         <section class="card">
           <div class="card-head">Payment Information</div>
           <div class="card-body">
+            <?php if (!empty($errors)): ?>
+              <div style="background:#fee;border:1px solid #fcc;border-radius:12px;padding:12px;margin-bottom:20px;">
+                <strong style="color:#c00;">Please fix the following errors:</strong>
+                <ul style="margin:8px 0 0 20px;color:#c00;">
+                  <?php foreach ($errors as $error): ?>
+                    <li><?php echo htmlspecialchars($error); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
+            <?php endif; ?>
+            
             <form method="post" action="process.php">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>" />
               <input type="hidden" name="Amount" value="<?php echo $amount_minor; ?>" />
 
               <h3 class="section-title">Card Details</h3>

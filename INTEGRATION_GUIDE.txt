@@ -1,0 +1,105 @@
+==============================================================================
+FRONTEND INTEGRATION GUIDE - CartItems Payment
+==============================================================================
+
+QUICK START
+-----------
+From your frontend, pass cartItems array to index.php using one of these methods:
+
+METHOD 1: JavaScript POST (Recommended)
+----------------------------------------
+```javascript
+function goToPayment(cartItems) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'index.php';
+    
+    cartItems.forEach((item, index) => {
+        ['name', 'price', 'quantity'].forEach(field => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `cartItems[${index}][${field}]`;
+            input.value = item[field];
+            form.appendChild(input);
+        });
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Usage:
+goToPayment([
+    { name: "Dental Cleaning", price: 75.00, quantity: 1 },
+    { name: "X-Ray", price: 150.00, quantity: 2 }
+]);
+```
+
+METHOD 2: HTML Form
+--------------------
+```html
+<form method="POST" action="index.php">
+    <input type="hidden" name="cartItems[0][name]" value="Service 1">
+    <input type="hidden" name="cartItems[0][price]" value="100.00">
+    <input type="hidden" name="cartItems[0][quantity]" value="1">
+    
+    <input type="hidden" name="cartItems[1][name]" value="Service 2">
+    <input type="hidden" name="cartItems[1][price]" value="200.00">
+    <input type="hidden" name="cartItems[1][quantity]" value="2">
+    
+    <button type="submit">Pay Now</button>
+</form>
+```
+
+METHOD 3: GET Request (for simple redirects)
+---------------------------------------------
+```javascript
+const params = new URLSearchParams();
+cartItems.forEach((item, index) => {
+    params.append(`cartItems[${index}][name]`, item.name);
+    params.append(`cartItems[${index}][price]`, item.price);
+    params.append(`cartItems[${index}][quantity]`, item.quantity);
+});
+
+window.location.href = `index.php?${params.toString()}`;
+```
+
+DATA FORMAT
+-----------
+cartItems is an array of objects with these required fields:
+
+{
+    name: String,      // Product/Service name
+    price: Number,     // Price (float, e.g., 75.50)
+    quantity: Integer  // Quantity (whole number)
+}
+
+Example:
+[
+    { name: "Consultation", price: 50.00, quantity: 1 },
+    { name: "Cleaning", price: 75.00, quantity: 2 }
+]
+
+FLOW
+----
+1. Frontend → POST cartItems to index.php
+2. index.php → Calculates total from cartItems
+3. index.php → Shows order summary with items
+4. User → Enters payment details
+5. process.php → Processes payment with gateway
+6. Success → Shows order details with cartItems
+
+TESTING
+-------
+Open frontend_example.html in browser and click "Proceed to Payment"
+Or open example_usage.php for working examples
+
+FILES
+-----
+- index.php - Payment form (receives cartItems)
+- process.php - Payment processing (uses cartItems from session)
+- frontend_example.html - Complete working example
+- example_usage.php - Multiple examples
+
+==============================================================================
+
