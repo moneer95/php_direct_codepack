@@ -213,7 +213,10 @@ if (isset($res['responseCode'])) {
         $customerAddress = $_SESSION['customerAddress'] ?? [];
         $customerEmail = $_SESSION['customerEmail'] ?? [];
         $customerPostCode = $_SESSION['customerPostCode'] ?? [];
-        
+        $orderRef = $_SESSION['orderRef'] ?? [];
+        $transactionUnique = $_SESSION['transactionUnique'] ?? [];
+        $amountMinor = $_SESSION['amountMinor'] ?? [];
+            
         // Successful payment
         $html .= '<div class="success"><h2>✓ Payment Successful</h2>';
         $html .= "<p>" . htmlentities($res['responseMessage']) . "</p></div>";
