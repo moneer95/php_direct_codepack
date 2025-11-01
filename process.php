@@ -11,6 +11,17 @@ $gatewayURL = 'https://gateway.cardstream.com/direct/';
 // Request
 if (!isset($_GET['threeDSAcsResponse'])) {
 
+// Clean card number (remove spaces)
+$cardNumber = str_replace(' ', '', $_POST['CardNumber']);
+
+// Process expiry month and year
+$expiryMonth = isset($_POST['cardExpiryMonth']) ? intval($_POST['cardExpiryMonth']) : 12;
+$expiryYear = isset($_POST['cardExpiryYear']) ? intval($_POST['cardExpiryYear']) : 25;
+// Convert 2-digit year to 4-digit if needed (assuming YY format)
+if ($expiryYear < 100) {
+    $expiryYear = 2000 + $expiryYear;
+}
+
 $req = array(
     'merchantID' => '278346', // Should be $merchantID from the file gateway.php -> change if needed
     'action' => 'SALE',
@@ -18,20 +29,19 @@ $req = array(
     'countryCode' => 826,
     'currencyCode' => 826,
     'amount' => $_POST['Amount'],
-    'cardNumber' => $_POST['CardNumber'],
-    'cardExpiryMonth' => 12,
-    'cardExpiryYear' => 55,
+    'cardNumber' => $cardNumber,
+    'cardExpiryMonth' => $expiryMonth,
+    'cardExpiryYear' => substr($expiryYear, -2), // Gateway expects 2-digit year
     'cardCVV' => $_POST['CVV'],
-    'customerName' => 'Test Customer',
-    'customerEmail' => 'test@testcustomer.com',
-    'customerAddress' => '16 Test Street',
-    'customerPostCode' => 'TE15 5ST',
-    'orderRef' => 'Test purchase - ' .uniqid(),
+    'customerName' => isset($_POST['customerName']) ? $_POST['customerName'] : '',
+    'customerEmail' => isset($_POST['customerEmail']) ? $_POST['customerEmail'] : '',
+    'customerAddress' => isset($_POST['customerAddress']) ? $_POST['customerAddress'] : '',
+    'customerPostCode' => isset($_POST['customerPostCode']) ? $_POST['customerPostCode'] : '',
+    'orderRef' => 'Order - ' . uniqid(),
     'transactionUnique' => (isset($_REQUEST['transactionUnique']) ?
     $_REQUEST['transactionUnique'] : uniqid()),
     // 3DS requests now require either a phone number with area code or customer email address
     "customerPhone"    => format_phone_number('07900000000', 826),
-    "customerEmail"   => "nicolas.cage@takepayments.com",
     'remoteAddress'             => $_SERVER['REMOTE_ADDR'],
     'threeDSRedirectURL'        => $samplecodeURL . '?threeDSAcsResponse',
     'deviceChannel'				=> 'browser',
