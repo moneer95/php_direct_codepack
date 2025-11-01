@@ -7,7 +7,7 @@
 function getConfig() {
     static $config = null;
     if ($config === null) {
-        $configFile = __DIR__ . '/config.php';
+        $configFile = __DIR__ . '/config.example.php';
         if (file_exists($configFile)) {
             $config = require $configFile;
         } else {
