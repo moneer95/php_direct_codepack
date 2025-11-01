@@ -221,7 +221,49 @@ if (isset($res['responseCode'])) {
             }
             $html .= '</ul></div>';
         }
-        
+
+      // --- Webhook trigger ---
+      $webhookUrl = "https://ea-dental.com/api/payment-succeed"; // your webhook endpoint
+      $payload = json_encode([
+          'status'          => 'success',
+          'transactionRef'  => $_POST['transactionUnique'] ?? null,
+          'orderRef'        => $_POST['orderRef'] ?? null,
+          'amount'          => $_POST['amount'] ?? null,
+          'responseMessage' => $_POST['responseMessage'] ?? null,
+          'cardType'        => $_POST['cardType'] ?? null,
+          'timestamp'       => date('c'),
+          'cartItems'       => $cartItems, 
+      ]);
+
+      $ch = curl_init($webhookUrl);
+      curl_setopt($ch, CURLOPT_POST, true);
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, [
+          'Content-Type: application/json',
+          'Content-Length: ' . strlen($payload)
+      ]);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+      $response = curl_exec($ch);
+      $error    = curl_error($ch);
+      curl_close($ch);
+
+      if ($error) {
+          error_log("Webhook failed: " . $error);
+      } else {
+          error_log("Webhook sent: " . $response);
+      }
+
+
+    
+      
+
+
+
+
+
+      
         // Important, you must verify the returned signature
         try {
             if ($CSGW::verifyResponse($res, $key)) {
