@@ -33,8 +33,8 @@ function startSecureSession() {
     // Set secure cookie parameters
     ini_set('session.cookie_httponly', '1');
     ini_set('session.cookie_secure', $config['requireHTTPS'] ? '1' : '0');
-    ini_set('session.cookie_samesite', 'Strict');
-    ini_set('session.use_strict_mode', '1');
+    ini_set('session.cookie_samesite', 'None');
+    ini_set('session.use_strict_mode', '0');
     
     // Set session name
     session_name('payment_session');
@@ -73,7 +73,7 @@ function setSecureCookie($name, $value, $expiry = null) {
         'domain' => '',
         'secure' => $config['requireHTTPS'],
         'httponly' => true,
-        'samesite' => 'Strict'
+        'samesite' => 'None'
     ];
     
     return setcookie($name, $value, $options);

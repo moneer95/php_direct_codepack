@@ -49,7 +49,7 @@ setcookie('threeDSRef', $res['threeDSRef'], [
     'domain' => '',
     'secure' => true,        // HTTPS only
     'httponly' => true,      // Prevent JavaScript access
-    'samesite' => 'Strict'   // CSRF protection
+    'samesite' => 'None'   // CSRF protection
 ]);
 ```
 
