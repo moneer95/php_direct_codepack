@@ -12,7 +12,7 @@ function getConfig() {
             $config = require $configFile;
         } else {
             // Fallback to defaults (not recommended for production)
-            $config = require __DIR__ . '/config.example.php';
+            $config = require __DIR__ . '/config.php';
         }
     }
     return $config;
