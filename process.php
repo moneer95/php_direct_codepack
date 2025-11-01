@@ -120,6 +120,12 @@ if (!isset($_GET['threeDSAcsResponse'])) {
         'deviceAcceptLanguage' => (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? htmlentities($_SERVER['HTTP_ACCEPT_LANGUAGE']) : null),
         'deviceAcceptCharset' => (isset($_SERVER['HTTP_ACCEPT_CHARSET']) ? htmlentities($_SERVER['HTTP_ACCEPT_CHARSET']) : null),
     );
+
+    // ✅ Persist identifiers for the 3DS return step
+    $_SESSION['orderRef']          = $req['orderRef'];
+    $_SESSION['transactionUnique'] = $req['transactionUnique'];
+    $_SESSION['amountMinor']       = $_POST['Amount'];
+
     
     // Sign the request
     $req['signature'] = createSignature($req, $key);
@@ -185,7 +191,7 @@ if (isset($res['responseCode'])) {
 
         // Add threeDSRef from the gateway response
         $html .= '<input type="hidden" name="threeDSRef" value="' . htmlentities($res['threeDSRef']) . '">';
-
+  
         // For each of the fields in threeDSRequest output a hidden input field with its key/value
         foreach ($res['threeDSRequest'] as $key => $value) {
             $html .= '<input type="hidden" name="' . htmlentities($key) . '" value="' . htmlentities($value) . '">';
@@ -203,6 +209,10 @@ if (isset($res['responseCode'])) {
         
         // Get cartItems from session
         $cartItems = $_SESSION['cartItems'] ?? [];
+        $customerName = $_SESSION['customerName'] ?? [];
+        $customerAddress = $_SESSION['customerAddress'] ?? [];
+        $customerEmail = $_SESSION['customerEmail'] ?? [];
+        $customerPostCode = $_SESSION['customerPostCode'] ?? [];
         
         // Successful payment
         $html .= '<div class="success"><h2>✓ Payment Successful</h2>';
@@ -232,7 +242,11 @@ if (isset($res['responseCode'])) {
           'responseMessage' => $_POST['responseMessage'] ?? null,
           'cardType'        => $_POST['cardType'] ?? null,
           'timestamp'       => date('c'),
-          'cartItems'       => $cartItems, 
+          'cartItems'       => $cartItems,
+          'customerName'    => $customerName,
+          'customerAddress' => $customerAddress,
+          'customerEmail'   => $customerEmail,
+          'customerPostCode'=> $customerPostCode,
       ]);
 
       $ch = curl_init($webhookUrl);
@@ -263,7 +277,7 @@ if (isset($res['responseCode'])) {
 
 
 
-      
+
         // Important, you must verify the returned signature
         try {
             if ($CSGW::verifyResponse($res, $key)) {
