@@ -284,13 +284,6 @@ if (isset($res['responseCode'])) {
 
 
 
-    
-      
-
-
-
-
-
 
         // Important, you must verify the returned signature
         try {
@@ -316,6 +309,12 @@ if (isset($res['responseCode'])) {
             'responseMessage' => $res['responseMessage'] ?? '',
             'cartItemsCount' => count($cartItems)
         ]);
+
+        // ✅ After webhook, redirect to success page
+        $redirectUrl = "/payment-success.php?orderRef=" . urlencode($orderRef);
+        header("Location: $redirectUrl");
+        exit;
+
         
     } else {
         
